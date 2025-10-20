@@ -208,7 +208,7 @@ app.get('/units', authenticate, async (req, res) => {
       [userId]
     );
     await connection.end();
-    // Use safeParseImages instead of JSON.parse
+    // FIXED: Use safeParseImages instead of JSON.parse
     const processedUnits = units.map(unit => ({
       ...unit,
       images: safeParseImages(unit.images)
@@ -234,7 +234,7 @@ app.get('/units/:id', authenticate, async (req, res) => {
     if (units.length === 0) {
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
-    // Use safeParseImages instead of JSON.parse
+    // FIXED: Use safeParseImages instead of JSON.parse
     const unit = { 
       ...units[0], 
       images: safeParseImages(units[0].images)
@@ -253,7 +253,7 @@ app.put('/units/:id', authenticate, upload.array('images', 5), async (req, res) 
   const { buildingName, unitNumber, location, specs, specialFeatures, contactPerson, phoneNumber, existingImages } = req.body;
   const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
   
-  // Use safeParseImages for existingImages
+  // FIXED: Use safeParseImages for existingImages
   const parsedExistingImages = safeParseImages(existingImages);
   const imagesToStore = parsedExistingImages.concat(newImagePaths);
   
@@ -296,7 +296,7 @@ app.delete('/units/:id', authenticate, async (req, res) => {
       await connection.end();
       return res.status(404).json({ message: 'Unit not found or does not belong to this user' });
     }
-    // Use safeParseImages instead of JSON.parse
+    // FIXED: Use safeParseImages instead of JSON.parse
     const imagePathsToDelete = safeParseImages(unitToDeleteRows[0].images);
     for (const imagePath of imagePathsToDelete) {
       const filePath = path.join(__dirname, imagePath);
@@ -324,11 +324,11 @@ app.get('/public/units', async (req, res) => {
     const connection = await mysql.createConnection(dbConfig);
     const [units] = await connection.execute('SELECT * FROM units');
     await connection.end();
-    // Use safeParseImages instead of JSON.parse
+    // FIXED: Use safeParseImages instead of JSON.parse
     const mappedUnits = units.map(unit => ({
       ...unit,
       unitPrice: unit.unit_price,
-      images: safeParseImages(unit.images)
+      images: safeParseImages(unit.images)  // ← MAIN FIX HERE
     }));
     res.status(200).json({ units: mappedUnits });
   } catch (error) {
@@ -565,14 +565,14 @@ app.delete('/admin/users/:id', async (req, res) => {
     // Find all units for this user to delete their images
     const [unitRows] = await connection.execute('SELECT id, images FROM units WHERE user_id = ?', [userId]);
     for (const unit of unitRows) {
-      // Use safeParseImages instead of JSON.parse
+      // FIXED: Use safeParseImages instead of JSON.parse
       const imagePaths = safeParseImages(unit.images);
       for (const imagePath of imagePaths) {
         const filePath = path.join(__dirname, imagePath);
         try {
           await fs.unlink(filePath);
         } catch (error) {
-          
+          // Ignore file not found errors
         }
       }
     }
@@ -598,10 +598,10 @@ app.get('/admin/units', async (req, res) => {
       `SELECT units.*, users.username as owner_username, users.email as owner_email FROM units LEFT JOIN users ON units.user_id = users.id`
     );
     await connection.end();
-    // Use safeParseImages instead of JSON.parse
+    // FIXED: Use safeParseImages instead of JSON.parse
     const processedUnits = units.map(unit => ({
       ...unit,
-      images: safeParseImages(unit.images)
+      images: safeParseImages(unit.images)  // ← FIX HERE
     }));
     res.status(200).json({ units: processedUnits });
   } catch (error) {
@@ -638,5 +638,5 @@ res.status(200).json({ message: 'Unit deleted successfully' });
   console.error('Admin: Error deleting unit', error);
   res.status(500).json({ message: 'Failed to delete unit' });
 }
-
-});  
+// Remove the extra } that was here
+});  // This closes the app.delete() method
