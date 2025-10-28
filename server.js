@@ -21,7 +21,6 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- Helper function to safely parse images ---
 const safeParseImages = (imagesData) => {
   if (!imagesData) return [];
   if (Array.isArray(imagesData)) return imagesData;
@@ -166,7 +165,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Helper middleware to get userId from header
 const authenticate = async (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -602,7 +600,6 @@ app.delete('/admin/users/:id', async (req, res) => {
     }
     // Delete all units for this user (which will cascade bookings/inquiries)
     await connection.execute('DELETE FROM units WHERE user_id = ?', [userId]);
-    // Now delete the user
     await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
     await connection.end();
     res.status(200).json({ message: 'User and all related data deleted successfully' });
