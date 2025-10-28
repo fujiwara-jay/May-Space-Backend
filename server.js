@@ -595,63 +595,6 @@ app.delete('/admin/users/:id', async (req, res) => {
   }
 });
 
-  app.put('/user/profile', authenticate, async (req, res) => {
-  try {
-    const { name, username, email, contact_number } = req.body;
-    
-    // Check if username or email already exists (excluding current user)
-    const connection = await mysql.createConnection(dbConfig);
-    
-    // Check for duplicate username
-    const [usernameRows] = await connection.execute(
-      'SELECT id FROM users WHERE username = ? AND id != ?',
-      [username, req.userId]
-    );
-    
-    if (usernameRows.length > 0) {
-      await connection.end();
-      return res.status(400).json({ message: 'Username already exists' });
-    }
-    
-    // Check for duplicate email
-    const [emailRows] = await connection.execute(
-      'SELECT id FROM users WHERE email = ? AND id != ?',
-      [email, req.userId]
-    );
-    
-    if (emailRows.length > 0) {
-      await connection.end();
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-    
-    // Update user profile
-    const [result] = await connection.execute(
-      'UPDATE users SET name = ?, username = ?, email = ?, contact_number = ? WHERE id = ?',
-      [name, username, email, contact_number, req.userId]
-    );
-    
-    // Fetch updated user data
-    const [userRows] = await connection.execute(
-      'SELECT id, name, username, email, contact_number, created_at FROM users WHERE id = ?',
-      [req.userId]
-    );
-    
-    await connection.end();
-    
-    if (userRows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json({ 
-      message: 'Profile updated successfully',
-      user: userRows[0] 
-    });
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    res.status(500).json({ message: 'Failed to update profile' });
-  }
-});
-
 // --- Admin Unit Management Endpoints ---
 
 // Fetch all units (admin view, includes user info)
