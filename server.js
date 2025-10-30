@@ -345,6 +345,33 @@ app.get('/public/units', async (req, res) => {
   }
 });
 
+// Serve unit image BLOB as base64
+app.get('/api/unit/:unitId/image/:imgIndex', async (req, res) => {
+  const { unitId, imgIndex } = req.params;
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [units] = await connection.execute('SELECT images FROM units WHERE id = ?', [unitId]);
+    await connection.end();
+    if (!units.length || !units[0].images) {
+      return res.status(404).json({ error: 'No image found' });
+    }
+    // If images is a JSON array of base64 blobs, parse it
+    let imagesArr;
+    try {
+      imagesArr = JSON.parse(units[0].images);
+    } catch {
+      imagesArr = [units[0].images]; // fallback: single image
+    }
+    const imgBuffer = Buffer.from(imagesArr[imgIndex], 'base64');
+    // You may want to store mimeType in DB, but default to jpeg
+    const mimeType = 'image/jpeg';
+    const base64Img = imgBuffer.toString('base64');
+    res.json({ base64: `data:${mimeType};base64,${base64Img}` });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
