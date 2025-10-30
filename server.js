@@ -720,3 +720,32 @@ app.get('/user/profile', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch user profile' });
   }
 });
+
+// Change user password
+app.put('/user/change-password', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const { currentPassword, newPassword } = req.body;
+  if (!userId || !currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    const user = users[0];
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordMatch) {
+      await connection.end();
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await connection.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+    await connection.end();
+    res.status(200).json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to change password.' });
+  }
+});
