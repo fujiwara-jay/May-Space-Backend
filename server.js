@@ -749,3 +749,29 @@ app.put('/user/change-password', async (req, res) => {
     res.status(500).json({ message: 'Failed to change password.' });
   }
 });
+
+// Update user profile
+app.put('/user/profile', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  const { name, email, contactNumber } = req.body;
+  if (!userId || !name || !email || !contactNumber) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      await connection.end();
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    await connection.execute(
+      'UPDATE users SET name = ?, email = ?, contact_number = ? WHERE id = ?',
+      [name, email, contactNumber, userId]
+    );
+    const [updatedUserRows] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    await connection.end();
+    res.status(200).json({ user: updatedUserRows[0], message: 'Profile updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update profile.' });
+  }
+});
