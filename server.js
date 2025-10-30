@@ -249,6 +249,11 @@ app.get('/units/:id', authenticate, async (req, res) => {
 app.put('/units/:id', authenticate, async (req, res) => {
   const unitId = req.params.id;
   const userId = req.userId;
+
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ message: 'Missing or invalid JSON payload.' });
+  }
+
   const {
     buildingName,
     unitNumber,
@@ -307,7 +312,7 @@ app.put('/units/:id', authenticate, async (req, res) => {
     res.status(200).json({ message: 'Unit updated successfully' });
   } catch (error) {
     console.error('Error updating unit:', error);
-    res.status(500).json({ message: 'Failed to update unit' });
+    res.status(500).json({ message: 'Failed to update unit', error: error.message, stack: error.stack });
   }
 });
 
