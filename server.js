@@ -355,20 +355,32 @@ app.get('/api/unit/:unitId/image/:imgIndex', async (req, res) => {
     if (!units.length || !units[0].images) {
       return res.status(404).json({ error: 'No image found' });
     }
-    // If images is a JSON array of base64 blobs, parse it
     let imagesArr;
     try {
       imagesArr = JSON.parse(units[0].images);
     } catch {
-      imagesArr = [units[0].images]; // fallback: single image
+      imagesArr = [units[0].images];
     }
-    const imgBuffer = Buffer.from(imagesArr[imgIndex], 'base64');
-    // You may want to store mimeType in DB, but default to jpeg
-    const mimeType = 'image/jpeg';
-    const base64Img = imgBuffer.toString('base64');
+    const imgPath = imagesArr[imgIndex];
+    if (!imgPath) {
+      return res.status(404).json({ error: 'Image index not found' });
+    }
+    // Read image file from disk and convert to base64
+    const filePath = path.join(__dirname, imgPath);
+    let fileBuffer;
+    try {
+      fileBuffer = await fs.readFile(filePath);
+    } catch (err) {
+      return res.status(404).json({ error: 'Image file not found on disk' });
+    }
+    const base64Img = fileBuffer.toString('base64');
+    // Optionally detect mime type from extension
+    let mimeType = 'image/jpeg';
+    if (imgPath.endsWith('.png')) mimeType = 'image/png';
+    else if (imgPath.endsWith('.gif')) mimeType = 'image/gif';
     res.json({ base64: `data:${mimeType};base64,${base64Img}` });
   } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
