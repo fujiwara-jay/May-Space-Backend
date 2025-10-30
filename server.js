@@ -630,7 +630,7 @@ app.get('/admin/units', async (req, res) => {
   }
 });
 
-// Admin delete any unit (by id, regardless of owner)
+// Admin delete any unit (by the id, regardless of owner)
 app.delete('/admin/units/:id', async (req, res) => {
   const unitId = req.params.id;
   try {
