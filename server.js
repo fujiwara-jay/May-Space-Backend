@@ -660,3 +660,24 @@ res.status(200).json({ message: 'Unit deleted successfully' });
 }
 
 });
+
+// Get user profile
+app.get('/user/profile', async (req, res) => {
+  const userId = req.headers['x-user-id'];
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized: User ID not provided.' });
+  }
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [users] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    await connection.end();
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const user = users[0];
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Failed to fetch user profile' });
+  }
+});
