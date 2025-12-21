@@ -618,7 +618,7 @@ app.get('/inquiries', async (req, res) => {
 
 // --- Bookings Endpoints ---
 
-// Create a new booking (with transaction_type and date_of_visiting)
+/// Create a new booking (with transaction_type and date_of_visiting)
 app.post('/bookings', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const { unitId, name, address, contactNumber, numberOfPeople, transaction, dateVisiting } = req.body;
@@ -1063,6 +1063,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
 // --- Admin Report Endpoints ---
 
 // Get comprehensive admin report statistics
